@@ -1,0 +1,62 @@
+blueprint:
+  name: Generic KNX-to-HA-Light-or-Switch
+  description: >
+    ## KNX Push-Button to Home Assistant Light/Switch
+    
+    This automation enables switching of any KNX push-buttons to control
+    any specific light or switch in Home Assistant. 
+    
+    The configuration is done in ETS with the group address name matching a certain home assistant entity.
+
+    ### Preparation:
+    
+    1.  **ETS Configuration:** The name of the group address in ETS must match
+        the entity ID of the Home Assistant entity.
+        
+        *Example Config in ETS:* `10/0/0 light.living_room_floor_lamp`
+        
+        *(Currently, the `switch` and `light` platforms are supported.)*
+
+    2.  **Push-Button Assignment:** In ETS, any push-button can then be assigned
+        to the corresponding group address with "switch" as the dpt.
+
+    3.  **KNX Project Import:** After each change in the group address assignment, the KNX project file must be exported from ETS and then
+        imported into Home Assistant so that Home Assistant knows the group address names.
+        
+  domain: automation
+  input:
+    knx_device:
+      name: KNX-Device
+      description: Choose your KNX Interface / IP Router.
+      selector:
+        device:
+          filter:
+            - integration: knx
+triggers:
+- domain: knx
+  device_id: !input knx_device
+  type: telegram
+  trigger: device
+  group_value_write: true
+  group_value_response: false
+  group_value_read: false
+  incoming: true
+  outgoing: false
+conditions:
+- condition: template
+  value_template: "{{ trigger.destination_name is not none and trigger.dpt_name
+    == 'switch' and (trigger.destination_name in states.light | map(attribute='entity_id')
+    | list or    trigger.destination_name in states.switch | map(attribute='entity_id')
+    | list) }} "
+  alias: if group address name starts with 'switch.' or 'light.' and the DPT type is 'switch' and group address name is matching a HA entity.
+actions:
+- variables:
+    entity_id: '{{ trigger.destination_name }}'
+    on_off: '{{ trigger.value }}'
+    switch_light: '{{ trigger.destination_name.split(''.'')[0]}}'
+- action: '{{switch_light ~ ''.turn_'' ~ on_off}}'
+  target:
+    entity_id: '{{ entity_id }}'
+  data: {}
+  alias: 'Template: switches the light or switch entity based on the group address name and value'
+mode: single
