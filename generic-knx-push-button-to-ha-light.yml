@@ -17,6 +17,8 @@ blueprint:
         
         *(Currently, the `switch` and `light` platforms are supported.)*
 
+        For an example of how to configure this in ETS, see [this image](https://github.com/vmarquar/homeassistant-blueprints/blob/main/docs/01_example_config_ets.jpg).
+
     2.  **Push-Button Assignment:** In ETS, any push-button can then be assigned
         to the corresponding group address with "switch" as the dpt.
 
