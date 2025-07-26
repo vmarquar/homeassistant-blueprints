@@ -56,7 +56,7 @@ blueprint:
     not_needed:
       name: Not needed
       description: This automation does not require any input.
-      default: Change me to whatever you like, so the automtion import button appears ;)
+      default: Change me to whatever you like, so the automation import button appears
 
 triggers:
   - platform: knx.telegram
