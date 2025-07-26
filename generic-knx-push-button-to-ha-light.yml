@@ -1,64 +1,80 @@
 blueprint:
   name: Generic KNX-to-HA-Light-or-Switch
   description: >
-    ## KNX Push-Button to Home Assistant Light/Switch
-    
+    # KNX Push-Button to Home Assistant Light/Switch
+
     This automation enables switching of any KNX push-buttons to control
     any specific light or switch in Home Assistant. 
-    
+
     The configuration is done in ETS with the group address name matching a certain home assistant entity.
 
-    ### Preparation:
-    
+    ## Preparation:
+
     1.  **ETS Configuration:** The name of the group address in ETS must match
         the entity ID of the Home Assistant entity.
         
         *Example Config in ETS:* `10/0/0 light.living_room_floor_lamp`
         
-        *(Currently, the `switch` and `light` platforms are supported.)*
+        *(Currently, the `switch`, `light`, `input_boolean`, `automation`, `script`, `media_player`, `fan` and `cover` platforms are supported.)*
 
         For an example of how to configure this in ETS, see [this image](https://github.com/vmarquar/homeassistant-blueprints/blob/main/docs/01_example_config_ets.jpg).
 
-    2.  **Push-Button Assignment:** In ETS, any push-button can then be assigned
-        to the corresponding group address with "switch" as the dpt.
+    2.  **Push-Button Assignment:** In ETS, any push-button (or similar devices) can be used. They must write a DPT1 (1.xxx) value to the group address.
 
     3.  **KNX Project Import:** After each change in the group address assignment, the KNX project file must be exported from ETS and then
         imported into Home Assistant so that Home Assistant knows the group address names.
-        
+
+
+    ### **Improvements in v0.2.0: Additional support for other domains:**
+    TESTED:
+    - light.turn_off / light.turn_on
+    - switch.turn_off / switch.turn_on
+    - input_boolean.turn_off / input_boolean.turn_on
+    - script.turn_off / script.turn_on (for stopping/starting scripts)
+    - automation.turn_off / automation.turn_on (for activating/deactivating automations)
+    - media_player.turn_off / media_player.turn_on (for stopping/starting media players)
+
+    SHOULD WORK (not actively tested):
+    - fan.turn_off / fan.turn_on
+    - cover.turn_off / cover.turn_on (typically closes/opens the cover)
+
   domain: automation
-  input:
-    knx_device:
-      name: KNX-Device
-      description: Choose your KNX Interface / IP Router.
-      selector:
-        device:
-          filter:
-            - integration: knx
+  # input:
+  #   knx_device:
+  #     name: KNX-Device
+  #     description: Choose your KNX Interface / IP Router.
+  #     selector:
+  #       device:
+  #         filter:
+  #           - integration: knx
 triggers:
-- domain: knx
-  device_id: !input knx_device
-  type: telegram
-  trigger: device
-  group_value_write: true
-  group_value_response: false
-  group_value_read: false
-  incoming: true
-  outgoing: false
+  - platform: knx.telegram
+    group_value_write: true
+    group_value_response: false
+    group_value_read: false
+    incoming: true
+    outgoing: false
+    alias: Incoming KNX telegram (will listen to all incoming GroupValueWrite-telegrams)
 conditions:
-- condition: template
-  value_template: "{{ trigger.destination_name is not none and trigger.dpt_name
-    == 'switch' and (trigger.destination_name in states.light | map(attribute='entity_id')
-    | list or    trigger.destination_name in states.switch | map(attribute='entity_id')
-    | list) }} "
-  alias: if group address name starts with 'switch.' or 'light.' and the DPT type is 'switch' and group address name is matching a HA entity.
+  - condition: template
+    value_template:
+      "{% set allowed_domains = ['light', 'switch', 'fan', 'automation', 'script', 'media_player', 'cover', 'input_boolean'] %}
+      {{ trigger.destination_name is not none and
+        trigger.destination_name.split('.')[0] in allowed_domains and
+        trigger.destination_name in states | map(attribute='entity_id') and
+        trigger.dpt_main == 1
+      }}"
+    alias: "Template: checks if the destination_name is not none, is in allowed domains, and has a valid DPT"
 actions:
-- variables:
-    entity_id: '{{ trigger.destination_name }}'
-    on_off: '{{ trigger.value }}'
-    switch_light: '{{ trigger.destination_name.split(''.'')[0]}}'
-- action: '{{switch_light ~ ''.turn_'' ~ on_off}}'
-  target:
-    entity_id: '{{ entity_id }}'
-  data: {}
-  alias: 'Template: switches the light or switch entity based on the group address name and value'
-mode: single
+  - variables:
+      entity_id: "{{ trigger.destination_name }}"
+      turn_on_off: "{{ 'turn_' + ('on' if trigger.payload else 'off')}}"
+  - action: "{{'homeassistant.' ~ turn_on_off}}"
+    target:
+      entity_id: "{{ entity_id }}"
+    data: {}
+    alias: "Template: switches the light or switch entity based on the group address name and value"
+mode: parallel
+
+
+
