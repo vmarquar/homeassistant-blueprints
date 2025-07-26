@@ -52,11 +52,11 @@ blueprint:
     **IMPORTANT: This Blueprint does not require any input configuration. Just save it in your automations and it will listen to all knx telegrams.**
 
   domain: automation
-  # input:
-  #   not_needed:
-  #     name: Not needed
-  #     description: This automation does not require any input.
-  #     default: Not needed
+  input:
+    not_needed:
+      name: Not needed
+      description: This automation does not require any input.
+      default: Change me to whatever you like, so the automtion import button appears ;)
 
 triggers:
   - platform: knx.telegram
