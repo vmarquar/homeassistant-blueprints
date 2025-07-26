@@ -73,7 +73,7 @@ conditions:
       {{ trigger.destination_name is not none and
         trigger.destination_name.split('.')[0] in allowed_domains and
         trigger.destination_name in states | map(attribute='entity_id') and
-        trigger.dpt_main == 1
+        trigger.payload in [0, 1]
       }}"
     alias: "Template: checks if the destination_name is not none, is in allowed domains, and has a valid DPT"
 actions:
