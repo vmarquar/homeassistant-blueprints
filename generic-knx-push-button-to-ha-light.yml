@@ -1,10 +1,10 @@
 blueprint:
-  name: Generic KNX-to-HA-Light-or-Switch
+  name: Generic KNX-to-HA-Turn-On-Off-Entity
   description: >
-    # KNX Push-Button to Home Assistant Light/Switch
+    # KNX Push-Button to Home Assistant Turn On/Off Entity
 
-    This automation enables switching of any KNX push-buttons to control
-    any specific light or switch in Home Assistant. 
+    This automation enables switching of any KNX push-buttons (or similar devices) to control
+    any specific turn_on/turn_off entity (e.g. light, switch etc.) in Home Assistant. 
 
     The configuration is done in ETS with the group address name matching a certain home assistant entity.
 
@@ -26,27 +26,38 @@ blueprint:
 
 
     ### **Improvements in v0.2.0: Additional support for other domains:**
+
     TESTED:
+
     - light.turn_off / light.turn_on
+
     - switch.turn_off / switch.turn_on
+
     - input_boolean.turn_off / input_boolean.turn_on
+
     - script.turn_off / script.turn_on (for stopping/starting scripts)
+
     - automation.turn_off / automation.turn_on (for activating/deactivating automations)
+
     - media_player.turn_off / media_player.turn_on (for stopping/starting media players)
 
+
     SHOULD WORK (not actively tested):
+
     - fan.turn_off / fan.turn_on
+
     - cover.turn_off / cover.turn_on (typically closes/opens the cover)
+
+
+    **IMPORTANT: This Blueprint does not require any input configuration. Just save it in your automations and it will listen to all knx telegrams.**
 
   domain: automation
   # input:
-  #   knx_device:
-  #     name: KNX-Device
-  #     description: Choose your KNX Interface / IP Router.
-  #     selector:
-  #       device:
-  #         filter:
-  #           - integration: knx
+  #   not_needed:
+  #     name: Not needed
+  #     description: This automation does not require any input.
+  #     default: Not needed
+
 triggers:
   - platform: knx.telegram
     group_value_write: true
